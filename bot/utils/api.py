@@ -116,6 +116,29 @@ def _get_or_create_customer(c: httpx.Client, name: str, phone: str) -> int:
 
 # ── Plan del día ──────────────────────────────────────────────────────────────
 
+def get_jobs_by_phone(phone: str) -> list[dict]:
+    """Devuelve citas activas (pending/confirmed) de un cliente por teléfono."""
+    with _client() as c:
+        # Buscar cliente por teléfono
+        r = c.get("/customers/", params={"workshop_id": WORKSHOP_ID, "phone": phone})
+        if r.status_code != 200 or not r.json():
+            return []
+        customer_id = r.json()[0]["id"]
+        # Buscar sus jobs activos
+        r = c.get("/jobs/", params={"workshop_id": WORKSHOP_ID, "customer_id": customer_id})
+        if r.status_code != 200:
+            return []
+        active = ("pending", "confirmed")
+        return [j for j in r.json() if j["status"] in active]
+
+
+def cancel_job(job_id: int) -> dict:
+    with _client() as c:
+        r = c.patch(f"/jobs/{job_id}/status", params={"new_status": "cancelled"})
+        r.raise_for_status()
+        return r.json()
+
+
 def get_job(job_id: int) -> dict:
     with _client() as c:
         r = c.get(f"/jobs/{job_id}")

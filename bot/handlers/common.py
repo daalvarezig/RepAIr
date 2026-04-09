@@ -25,7 +25,8 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "Puedo ayudarte a gestionar tu cita:\n\n"
             "  📅 /disponibilidad — Ver días disponibles\n"
             "  🔧 /reservar — Pedir cita\n"
-            "  🔍 /estado <nº> — Consultar estado de una cita\n\n"
+            "  🔍 /estado <nº> — Consultar estado de una cita\n"
+            "  ❌ /cancelar\\_cita — Cancelar una cita activa\n\n"
             "_La moto debe estar en el taller a las 10:00h del día de la cita._"
         )
     await update.message.reply_text(msg, parse_mode="Markdown")

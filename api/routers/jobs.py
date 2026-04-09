@@ -26,6 +26,7 @@ def list_jobs(
     workshop_id:    int,
     scheduled_date: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     status:         Optional[str] = None,
+    customer_id:    Optional[int] = None,
 ):
     conn = get_connection()
     q    = "SELECT * FROM jobs WHERE workshop_id = ?"
@@ -36,6 +37,9 @@ def list_jobs(
     if status:
         q += " AND status = ?"
         params.append(status)
+    if customer_id:
+        q += " AND customer_id = ?"
+        params.append(customer_id)
     q += " ORDER BY scheduled_date, priority"
     rows = conn.execute(q, params).fetchall()
     conn.close()

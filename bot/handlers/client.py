@@ -13,13 +13,16 @@ from telegram.ext import (
 
 from utils.api import (
     get_week_availability, get_availability,
-    create_booking, get_job, fmt_availability_line, TIPO_LABELS,
+    create_booking, get_job, get_jobs_by_phone, cancel_job,
+    fmt_availability_line, TIPO_LABELS,
 )
 
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 # Estados de la conversación /reservar
 ASK_DATE, ASK_TIPO, ASK_NAME, ASK_PHONE, CONFIRM = range(5)
+# Estados de la conversación /cancelar_cita
+CANCEL_PHONE, CANCEL_PICK, CANCEL_CONFIRM = range(5, 8)
 
 
 # ── /disponibilidad ───────────────────────────────────────────────────────────
@@ -279,6 +282,139 @@ async def cmd_estado(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         f"  Estado: {estado}"
         + (f"\n  📝 {desc[:60]}" if desc else ""),
         parse_mode="Markdown",
+    )
+
+
+# ── /cancelar_cita — ConversationHandler ─────────────────────────────────────
+
+async def cancelar_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    ctx.user_data.clear()
+    await update.message.reply_text(
+        "📱 *¿Cuál es tu número de teléfono?*\n\n"
+        "_Lo usaremos para buscar tus citas activas._",
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    return CANCEL_PHONE
+
+
+async def cancelar_phone(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    phone = update.message.text.strip().replace(" ", "")
+    if len(phone) < 9:
+        await update.message.reply_text("Por favor escribe un teléfono válido.")
+        return CANCEL_PHONE
+
+    try:
+        jobs = get_jobs_by_phone(phone)
+    except Exception:
+        await update.message.reply_text("❌ Error consultando citas. Inténtalo de nuevo.")
+        return CANCEL_PHONE
+
+    if not jobs:
+        await update.message.reply_text(
+            "😔 No encontramos citas activas para ese teléfono.\n"
+            "_Si crees que es un error, contacta con el taller._",
+            parse_mode="Markdown",
+        )
+        return ConversationHandler.END
+
+    # Guardar mapa botón → job_id
+    job_map = {}
+    keyboard = []
+    for j in jobs:
+        tipo  = TIPO_LABELS.get(j["repair_type_code"], j["repair_type_code"])
+        label = f"#{j['id']} · {j['scheduled_date']} · {tipo}"
+        job_map[label] = j["id"]
+        keyboard.append([label])
+    keyboard.append(["❌ Salir"])
+
+    ctx.user_data["job_map"] = job_map
+
+    await update.message.reply_text(
+        f"📋 *Tus citas activas:*\n\n_Elige la que quieres cancelar:_",
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True),
+    )
+    return CANCEL_PICK
+
+
+async def cancelar_pick(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    text = update.message.text.strip()
+    if text == "❌ Salir":
+        await update.message.reply_text("Operación cancelada.", reply_markup=ReplyKeyboardRemove())
+        return ConversationHandler.END
+
+    job_id = ctx.user_data.get("job_map", {}).get(text)
+    if not job_id:
+        await update.message.reply_text("Por favor elige una opción del menú.")
+        return CANCEL_PICK
+
+    ctx.user_data["cancel_job_id"]    = job_id
+    ctx.user_data["cancel_job_label"] = text
+
+    keyboard = [["✅ Sí, cancelar"], ["❌ No, mantener"]]
+    await update.message.reply_text(
+        f"⚠️ *¿Confirmas la cancelación?*\n\n_{text}_\n\n"
+        f"_Esta acción no se puede deshacer._",
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True),
+    )
+    return CANCEL_CONFIRM
+
+
+async def cancelar_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    text = update.message.text.strip()
+    if text != "✅ Sí, cancelar":
+        await update.message.reply_text(
+            "Cancelación abortada. Tu cita sigue activa.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        return ConversationHandler.END
+
+    job_id = ctx.user_data["cancel_job_id"]
+    try:
+        cancel_job(job_id)
+        await update.message.reply_text(
+            f"✅ *Cita #{job_id} cancelada.*\n\n"
+            f"_Si necesitas una nueva cita usa /reservar._",
+            parse_mode="Markdown",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        if OWNER_ID:
+            try:
+                await ctx.bot.send_message(
+                    chat_id=OWNER_ID,
+                    text=f"🔔 *Cita #{job_id} cancelada por el cliente.*\n_{ctx.user_data['cancel_job_label']}_",
+                    parse_mode="Markdown",
+                )
+            except Exception:
+                pass
+    except Exception as e:
+        await update.message.reply_text(
+            f"❌ Error al cancelar: {e}\nContacta directamente con el taller.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+
+    ctx.user_data.clear()
+    return ConversationHandler.END
+
+
+async def cancelar_exit(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text("Operación cancelada.", reply_markup=ReplyKeyboardRemove())
+    ctx.user_data.clear()
+    return ConversationHandler.END
+
+
+def build_cancelar_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler("cancelar_cita", cancelar_start)],
+        states={
+            CANCEL_PHONE:   [MessageHandler(filters.TEXT & ~filters.COMMAND, cancelar_phone)],
+            CANCEL_PICK:    [MessageHandler(filters.TEXT & ~filters.COMMAND, cancelar_pick)],
+            CANCEL_CONFIRM: [MessageHandler(filters.TEXT & ~filters.COMMAND, cancelar_confirm)],
+        },
+        fallbacks=[CommandHandler("cancelar", cancelar_exit)],
+        allow_reentry=True,
     )
 
 

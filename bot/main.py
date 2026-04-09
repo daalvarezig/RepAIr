@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from handlers.common import cmd_start, cmd_help
 from handlers.owner  import cmd_plan, cmd_reoptimizar, cmd_citas
-from handlers.client import cmd_disponibilidad, cmd_estado, build_reservar_handler
+from handlers.client import cmd_disponibilidad, cmd_estado, build_reservar_handler, build_cancelar_handler
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -36,6 +36,7 @@ def main() -> None:
     app.add_handler(CommandHandler("citas",          cmd_citas))
     app.add_handler(CommandHandler("reoptimizar",    cmd_reoptimizar))
     app.add_handler(build_reservar_handler())
+    app.add_handler(build_cancelar_handler())
 
     logging.info("RepAIr Bot arrancando...")
     app.run_polling(drop_pending_updates=True)
