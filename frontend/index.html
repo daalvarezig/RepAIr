@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepAIr // Panel Taller</title>
+<style>
+  :root {
+    --bg:       #05050f;
+    --panel:    #0a0a2a;
+    --border:   #00c8ff;
+    --glow:     #00f3ff;
+    --dim:      #1a1a3a;
+    --text:     #a0d8ef;
+    --textbright: #e0f8ff;
+    --compleja: #ff6b35;
+    --standard: #0090ff;
+    --rapida:   #00ffaa;
+    --lunch:    #1a1a2e;
+    --pending:  #ffcc00;
+    --confirmed:#00c8ff;
+    --inprog:   #ff9900;
+    --done:     #00ff88;
+    --cancelled:#ff3366;
+    --waiting:  #cc66ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,200,255,0.015) 2px, rgba(0,200,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    box-shadow: 0 0 20px rgba(0,200,255,0.15);
+  }
+
+  .logo {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: var(--glow);
+    text-shadow: 0 0 10px var(--glow), 0 0 30px rgba(0,243,255,0.4);
+    letter-spacing: 0.15em;
+  }
+  .logo span { color: var(--compleja); text-shadow: 0 0 10px var(--compleja); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  input[type="date"] {
+    background: var(--dim);
+    color: var(--glow);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="date"]:focus { box-shadow: 0 0 8px var(--glow); }
+
+  .btn {
+    background: transparent;
+    color: var(--glow);
+    border: 1px solid var(--glow);
+    padding: 0.4rem 1.2rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .btn:hover {
+    background: rgba(0,243,255,0.1);
+    box-shadow: 0 0 12px var(--glow);
+  }
+  .btn.danger {
+    color: var(--compleja);
+    border-color: var(--compleja);
+  }
+  .btn.danger:hover {
+    background: rgba(255,107,53,0.1);
+    box-shadow: 0 0 12px var(--compleja);
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  main { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* ── KPIs ── */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--dim);
+    border-top: 2px solid var(--border);
+    padding: 0.8rem 1rem;
+  }
+  .kpi-label { font-size: 0.7rem; color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; }
+  .kpi-value { font-size: 1.8rem; color: var(--glow); text-shadow: 0 0 8px var(--glow); margin-top: 0.2rem; }
+  .kpi-value.warn { color: var(--compleja); text-shadow: 0 0 8px var(--compleja); }
+
+  /* ── Section ── */
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--dim);
+    border-left: 3px solid var(--border);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--dim);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--border);
+  }
+
+  /* ── Gantt ── */
+  .gantt-wrap { padding: 1rem; overflow-x: auto; }
+
+  .gantt-ruler {
+    display: flex;
+    margin-left: 110px;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .gantt-hour {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: rgba(0,200,255,0.5);
+    text-align: left;
+    padding-left: 2px;
+  }
+
+  .gantt-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .gantt-name {
+    width: 110px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--textbright);
+    padding-right: 8px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gantt-track {
+    position: relative;
+    flex: 1;
+    height: 32px;
+    background: var(--dim);
+    border: 1px solid rgba(0,200,255,0.1);
+  }
+
+  /* lunch overlay */
+  .gantt-lunch {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent, transparent 4px,
+      rgba(0,0,0,0.3) 4px, rgba(0,0,0,0.3) 8px
+    );
+    border-left: 1px dashed rgba(255,255,255,0.15);
+    border-right: 1px dashed rgba(255,255,255,0.15);
+    z-index: 1;
+  }
+
+  .gantt-block {
+    position: absolute;
+    top: 3px; bottom: 3px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: bold;
+    overflow: hidden;
+    cursor: pointer;
+    transition: filter 0.15s;
+    z-index: 2;
+  }
+  .gantt-block:hover { filter: brightness(1.3); }
+  .gantt-block.compleja {
+    background: linear-gradient(135deg, #ff6b35cc, #ff4500cc);
+    border: 1px solid var(--compleja);
+    color: #fff;
+    text-shadow: 0 0 4px #000;
+    box-shadow: 0 0 6px rgba(255,107,53,0.5);
+  }
+  .gantt-block.standard {
+    background: linear-gradient(135deg, #0090ffcc, #0050cccc);
+    border: 1px solid var(--standard);
+    color: #fff;
+    text-shadow: 0 0 4px #000;
+    box-shadow: 0 0 6px rgba(0,144,255,0.5);
+  }
+  .gantt-block.rapida {
+    background: linear-gradient(135deg, #00ffaacc, #00cc77cc);
+    border: 1px solid var(--rapida);
+    color: #000;
+    box-shadow: 0 0 6px rgba(0,255,170,0.5);
+  }
+
+  .gantt-grid-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(0,200,255,0.07);
+    z-index: 0;
+  }
+  .gantt-grid-line.lunch-start {
+    background: rgba(255,255,255,0.12);
+  }
+
+  /* empty state */
+  .empty {
+    padding: 2rem;
+    text-align: center;
+    color: rgba(160,216,239,0.4);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Job list ── */
+  .job-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .job-table th {
+    text-align: left;
+    padding: 0.5rem 1rem;
+    color: var(--border);
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--dim);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+  }
+  .job-table td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(26,26,58,0.8);
+    vertical-align: middle;
+  }
+  .job-table tr:hover td { background: rgba(0,200,255,0.04); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .badge.compleja  { background: rgba(255,107,53,0.2); color: var(--compleja); border: 1px solid rgba(255,107,53,0.4); }
+  .badge.standard  { background: rgba(0,144,255,0.2);  color: var(--standard); border: 1px solid rgba(0,144,255,0.4); }
+  .badge.rapida    { background: rgba(0,255,170,0.2);  color: var(--rapida);   border: 1px solid rgba(0,255,170,0.4); }
+
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .status-dot::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .status-dot.pending::before    { background: var(--pending);   box-shadow: 0 0 4px var(--pending); }
+  .status-dot.confirmed::before  { background: var(--confirmed); box-shadow: 0 0 4px var(--confirmed); }
+  .status-dot.in_progress::before{ background: var(--inprog);   box-shadow: 0 0 4px var(--inprog); }
+  .status-dot.done::before       { background: var(--done);     box-shadow: 0 0 4px var(--done); }
+  .status-dot.cancelled::before  { background: var(--cancelled);box-shadow: 0 0 4px var(--cancelled); }
+  .status-dot.waiting_parts::before { background: var(--waiting); box-shadow: 0 0 4px var(--waiting); }
+  .status-dot.no_show::before    { background: #888; }
+  .status-dot.unschedulable::before { background: #444; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 1.5rem; right: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--glow);
+    box-shadow: 0 0 20px rgba(0,243,255,0.3);
+    color: var(--textbright);
+    padding: 0.7rem 1.2rem;
+    font-size: 0.85rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.error { border-color: var(--compleja); box-shadow: 0 0 20px rgba(255,107,53,0.3); }
+
+  /* loader */
+  .loader {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(0,243,255,0.2);
+    border-top-color: var(--glow);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-bar {
+    font-size: 0.7rem;
+    color: rgba(160,216,239,0.5);
+    letter-spacing: 0.08em;
+  }
+
+  /* legend */
+  .legend {
+    display: flex;
+    gap: 1.2rem;
+    font-size: 0.7rem;
+    color: var(--text);
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.3rem; }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Rep<span>AI</span>r <span style="font-size:0.8rem;color:var(--text);text-shadow:none">// PANEL TALLER</span></div>
+  <div class="header-right">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--compleja)"></div> Compleja</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--standard)"></div> Standard</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--rapida)"></div> Rápida</div>
+    </div>
+    <input type="date" id="datePicker">
+    <button class="btn" id="btnRefresh" onclick="loadAll()">&#8635; ACTUALIZAR</button>
+    <button class="btn danger" id="btnReopt" onclick="reoptimize()">&#9889; REOPTIMIZAR</button>
+  </div>
+</header>
+
+<main>
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Citas totales</div>
+      <div class="kpi-value" id="kpiTotal">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Confirmadas</div>
+      <div class="kpi-value" id="kpiConfirmed">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Complejas</div>
+      <div class="kpi-value" id="kpiComplex">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Capacidad libre</div>
+      <div class="kpi-value" id="kpiFree">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">No planificables</div>
+      <div class="kpi-value" id="kpiUnsch">—</div>
+    </div>
+  </div>
+
+  <!-- Gantt -->
+  <div class="section">
+    <div class="section-header">
+      <span>&#9632; TIMELINE DEL DÍA</span>
+      <span class="status-bar" id="planStatus">— cargando —</span>
+    </div>
+    <div class="gantt-wrap" id="ganttWrap">
+      <div class="empty">Cargando plan...</div>
+    </div>
+  </div>
+
+  <!-- Jobs -->
+  <div class="section">
+    <div class="section-header">
+      <span>&#9632; CITAS DEL DÍA</span>
+      <span class="status-bar" id="jobsStatus"></span>
+    </div>
+    <div id="jobsWrap">
+      <div class="empty">Cargando citas...</div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const API = '/api';
+const WS_ID = 1;
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmtMin(m) {
+  const h = Math.floor(m / 60), mm = m % 60;
+  return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function showToast(msg, isError = false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(API + path, opts);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ── Gantt renderer ────────────────────────────────────────────────────────────
+const DAY_START  = 600;   // 10:00
+const DAY_END    = 1140;  // 19:00
+const LUNCH_S    = 840;   // 14:00
+const LUNCH_E    = 900;   // 15:00
+const DAY_SPAN   = DAY_END - DAY_START;  // 540 min
+
+function pct(min) {
+  return ((min - DAY_START) / DAY_SPAN * 100).toFixed(3) + '%';
+}
+
+function renderGantt(plan, mechanics) {
+  const wrap = $('ganttWrap');
+  if (!plan || !plan.blocks || plan.blocks.length === 0) {
+    wrap.innerHTML = '<div class="empty">Sin plan generado para este día.<br>Usa ⚡ REOPTIMIZAR para generarlo.</div>';
+    $('planStatus').textContent = 'sin plan';
+    return;
+  }
+
+  const mecMap = {};
+  mechanics.forEach(m => mecMap[m.id] = m.name);
+
+  // Group blocks by mechanic
+  const byMec = {};
+  plan.blocks.forEach(b => {
+    if (!byMec[b.mechanic_id]) byMec[b.mechanic_id] = [];
+    byMec[b.mechanic_id].push(b);
+  });
+
+  // Ruler hours
+  const hours = [];
+  for (let m = DAY_START; m <= DAY_END; m += 60) {
+    hours.push(`<div class="gantt-hour" style="width:${(60/DAY_SPAN*100).toFixed(2)}%">${fmtMin(m)}</div>`);
+  }
+
+  // Lunch position
+  const lunchLeft  = pct(LUNCH_S);
+  const lunchWidth = ((LUNCH_E - LUNCH_S) / DAY_SPAN * 100).toFixed(3) + '%';
+
+  // Grid lines
+  let gridLines = '';
+  for (let m = DAY_START; m <= DAY_END; m += 60) {
+    const cls = (m === LUNCH_S || m === LUNCH_E) ? 'gantt-grid-line lunch-start' : 'gantt-grid-line';
+    gridLines += `<div class="${cls}" style="left:${pct(m)}"></div>`;
+  }
+
+  // Rows
+  let rows = '';
+  for (const [midStr, blocks] of Object.entries(byMec)) {
+    const mid   = parseInt(midStr);
+    const name  = mecMap[mid] || `Mec ${mid}`;
+    const total = blocks.reduce((s, b) => s + b.end_min - b.start_min, 0);
+
+    let blocksHtml = gridLines;
+    blocksHtml += `<div class="gantt-lunch" style="left:${lunchLeft};width:${lunchWidth}"></div>`;
+
+    blocks.forEach(b => {
+      const left  = pct(Math.max(b.start_min, DAY_START));
+      const right = pct(Math.min(b.end_min, DAY_END));
+      const w     = ((Math.min(b.end_min, DAY_END) - Math.max(b.start_min, DAY_START)) / DAY_SPAN * 100).toFixed(3) + '%';
+      // Get job type from jobCache
+      const job   = jobCache[b.job_id];
+      const type  = job ? job.repair_type_code : 'standard';
+      const label = `#${b.job_id}`;
+      blocksHtml += `
+        <div class="gantt-block ${type}" style="left:${left};width:${w}"
+             title="#${b.job_id} · ${fmtMin(b.start_min)}–${fmtMin(b.end_min)}">
+          ${label}
+        </div>`;
+    });
+
+    rows += `
+      <div class="gantt-row">
+        <div class="gantt-name" title="${name}">${name}<br><span style="color:rgba(0,200,255,0.4);font-size:0.65rem">${fmtMin(total/60*60|0)} carga</span></div>
+        <div class="gantt-track">${blocksHtml}</div>
+      </div>`;
+  }
+
+  const unsch = plan.unschedulable || [];
+  const unschHtml = unsch.length
+    ? `<div style="padding:0.5rem 1rem;font-size:0.75rem;color:var(--compleja)">⚠ Sin planificar: jobs ${unsch.join(', ')}</div>`
+    : '';
+
+  wrap.innerHTML = `
+    <div class="gantt-ruler" style="margin-left:110px">${hours.join('')}</div>
+    ${rows}
+    ${unschHtml}`;
+
+  $('planStatus').textContent = `${plan.blocks.length} bloques · trigger: ${plan.trigger}`;
+}
+
+// ── Jobs renderer ─────────────────────────────────────────────────────────────
+const STATUS_LABELS = {
+  pending:       'Pendiente',
+  confirmed:     'Confirmada',
+  in_progress:   'En progreso',
+  waiting_parts: 'Esperando piezas',
+  done:          'Terminada',
+  cancelled:     'Cancelada',
+  no_show:       'No presentado',
+  unschedulable: 'No planificable',
+};
+const TIPO_LABELS = {
+  rapida:   '⚡ Rápida',
+  standard: '🔧 Standard',
+  compleja: '🔩 Compleja',
+};
+
+function renderJobs(jobs) {
+  const wrap = $('jobsWrap');
+  if (!jobs.length) {
+    wrap.innerHTML = '<div class="empty">Sin citas para este día.</div>';
+    $('jobsStatus').textContent = '';
+    return;
+  }
+
+  const rows = jobs.map(j => `
+    <tr>
+      <td style="color:var(--glow)">#${j.id}</td>
+      <td><span class="badge ${j.repair_type_code}">${TIPO_LABELS[j.repair_type_code] || j.repair_type_code}</span></td>
+      <td><span class="status-dot ${j.status}">${STATUS_LABELS[j.status] || j.status}</span></td>
+      <td style="color:rgba(160,216,239,0.6)">${(j.description || '').substring(0, 50)}</td>
+      <td style="color:rgba(160,216,239,0.5);font-size:0.75rem">${j.scheduled_date}</td>
+    </tr>`).join('');
+
+  wrap.innerHTML = `
+    <table class="job-table">
+      <thead><tr>
+        <th>ID</th><th>Tipo</th><th>Estado</th><th>Descripción</th><th>Fecha</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  $('jobsStatus').textContent = `${jobs.length} trabajos`;
+}
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs(jobs, plan) {
+  const total     = jobs.length;
+  const confirmed = jobs.filter(j => j.status === 'confirmed').length;
+  const complex   = jobs.filter(j => j.repair_type_code === 'compleja').length;
+  const unsch     = (plan && plan.unschedulable) ? plan.unschedulable.length : 0;
+
+  // Capacidad libre: total día = 3 mecánicos * 480 min trabajo = 1440 min
+  const booked = jobs
+    .filter(j => !['cancelled','no_show'].includes(j.status))
+    .reduce((s, j) => s + (j.operational_duration || 0), 0);
+  const freePct = Math.max(0, Math.round((1 - booked / 1440) * 100));
+
+  $('kpiTotal').textContent     = total;
+  $('kpiConfirmed').textContent = confirmed;
+  $('kpiComplex').textContent   = complex;
+  $('kpiFree').textContent      = freePct + '%';
+  $('kpiUnsch').textContent     = unsch;
+  $('kpiUnsch').className       = 'kpi-value' + (unsch > 0 ? ' warn' : '');
+  $('kpiFree').className        = 'kpi-value' + (freePct < 20 ? ' warn' : '');
+}
+
+// ── Load all ──────────────────────────────────────────────────────────────────
+let jobCache = {};
+
+async function loadAll() {
+  const date = $('datePicker').value;
+  jobCache = {};
+  try {
+    const [jobs, mechanics] = await Promise.all([
+      apiFetch(`/jobs/?workshop_id=${WS_ID}&scheduled_date=${date}`),
+      apiFetch(`/mechanics/?workshop_id=${WS_ID}`),
+    ]);
+    jobs.forEach(j => jobCache[j.id] = j);
+
+    let plan = null;
+    try {
+      plan = await apiFetch(`/plan/day?workshop_id=${WS_ID}&plan_date=${date}`);
+    } catch(_) {}
+
+    renderJobs(jobs);
+    renderGantt(plan, mechanics);
+    renderKPIs(jobs, plan);
+  } catch(e) {
+    showToast('Error cargando datos: ' + e.message, true);
+  }
+}
+
+// ── Reoptimize ────────────────────────────────────────────────────────────────
+async function reoptimize() {
+  const date = $('datePicker').value;
+  const btn  = $('btnReopt');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span>PROCESANDO...';
+  try {
+    const result = await apiFetch(
+      `/plan/reoptimize?workshop_id=${WS_ID}&plan_date=${date}&trigger=manual`,
+      { method: 'POST' }
+    );
+    showToast(`✓ Plan regenerado — ${result.blocks.length} bloques`);
+    await loadAll();
+  } catch(e) {
+    showToast('Error reoptimizando: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '&#9889; REOPTIMIZAR';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+$('datePicker').value = today();
+$('datePicker').addEventListener('change', loadAll);
+loadAll();
+</script>
+</body>
+</html>
