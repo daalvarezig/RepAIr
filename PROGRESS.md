@@ -4,7 +4,7 @@
 
 ---
 
-## Estado general: 🟢 FASE 1 + BOT TELEGRAM COMPLETADOS (con mejoras)
+## Estado general: 🟢 FASES 1-3 COMPLETADAS
 
 **Última actualización:** 2026-04-09
 
@@ -17,7 +17,7 @@
 | 0 | Infraestructura y modelo SQL | ✅ Completo |
 | 1 | Motor de reglas (FastAPI) | ✅ Completo |
 | 2 | Bot Telegram (clientes + owner) | ✅ Completo |
-| 3 | Vista diaria por mecánico (frontend) | ⬜ Pendiente |
+| 3 | Vista diaria por mecánico (frontend) | ✅ Completo |
 | 4 | V2 features (esperas, piezas, WhatsApp) | ⬜ Pendiente |
 | 5 | V3 / SaaS / KPIs | ⬜ Pendiente |
 
@@ -197,8 +197,21 @@ unschedulable → pending (revisión manual)
 ### 2026-04-09 — Mejoras bot
 - [x] Notificación al owner (OWNER_ID) en cada nueva reserva confirmada
 - [x] `/estado <id>` — consulta estado de cualquier cita por número
-- [x] `/start` y `/help` actualizados con el nuevo comando
-- [x] `get_job()` añadido a `utils/api.py`
+- [x] `/cancelar_cita` — ConversationHandler completo (teléfono → elegir → confirmar)
+- [x] Notificación al owner cuando cliente cancela
+- [x] `/start` y `/help` actualizados
+- [x] Bug fix: mapa explícito botón→fecha y botón→tipo (comparación robusta)
+- [x] Bug fix: doble instancia bot — systemd es la única forma de arrancar
+
+### 2026-04-09 — Frontend cyberpunk (Fase 3)
+- [x] `frontend/index.html` — panel diario completo
+- [x] Timeline Gantt 10:00–19:00 por mecánico (colores por tipo, zona comida)
+- [x] KPIs: citas totales, confirmadas, complejas, capacidad libre, no planificables
+- [x] Tabla de citas con estado, tipo y badges
+- [x] Botón REOPTIMIZAR → POST /plan/reoptimize
+- [x] Selector de fecha con recarga automática
+- [x] nginx actualizado: `/` → frontend, `/api/` → proxy 8010
+- [x] Disponible en https://repair.itopy.ai
 
 ---
 
