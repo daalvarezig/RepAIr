@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from handlers.common import cmd_start, cmd_help
 from handlers.owner  import cmd_plan, cmd_reoptimizar, cmd_citas
-from handlers.client import cmd_disponibilidad, build_reservar_handler
+from handlers.client import cmd_disponibilidad, cmd_estado, build_reservar_handler
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -31,6 +31,7 @@ def main() -> None:
     app.add_handler(CommandHandler("start",          cmd_start))
     app.add_handler(CommandHandler("help",           cmd_help))
     app.add_handler(CommandHandler("disponibilidad", cmd_disponibilidad))
+    app.add_handler(CommandHandler("estado",         cmd_estado))
     app.add_handler(CommandHandler("plan",           cmd_plan))
     app.add_handler(CommandHandler("citas",          cmd_citas))
     app.add_handler(CommandHandler("reoptimizar",    cmd_reoptimizar))

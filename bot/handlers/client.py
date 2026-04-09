@@ -1,8 +1,9 @@
 """
 Comandos para clientes (y owner).
-/disponibilidad, /reservar (ConversationHandler)
+/disponibilidad, /reservar (ConversationHandler), /estado
 """
 from __future__ import annotations
+import os
 from datetime import date
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
@@ -12,8 +13,10 @@ from telegram.ext import (
 
 from utils.api import (
     get_week_availability, get_availability,
-    create_booking, fmt_availability_line, TIPO_LABELS,
+    create_booking, get_job, fmt_availability_line, TIPO_LABELS,
 )
+
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 # Estados de la conversación /reservar
 ASK_DATE, ASK_TIPO, ASK_NAME, ASK_PHONE, CONFIRM = range(5)
@@ -203,6 +206,22 @@ async def reservar_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
             f"_Para cancelar contacta con el taller._",
             parse_mode="Markdown",
         )
+        # Notificar al owner
+        if OWNER_ID:
+            try:
+                await ctx.bot.send_message(
+                    chat_id=OWNER_ID,
+                    text=(
+                        f"🔔 *Nueva reserva #{job['id']}*\n\n"
+                        f"  📅 {job['scheduled_date']}\n"
+                        f"  🔧 {TIPO_LABELS[job['repair_type_code']]}\n"
+                        f"  👤 {ctx.user_data.get('name', '—')}\n"
+                        f"  📱 {ctx.user_data.get('phone', '—')}"
+                    ),
+                    parse_mode="Markdown",
+                )
+            except Exception:
+                pass  # No interrumpir si falla la notificación
     except Exception as e:
         await update.message.reply_text(
             f"❌ Error al crear la reserva: {e}\n"
@@ -217,6 +236,47 @@ async def reservar_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
     await update.message.reply_text("Reserva cancelada.", reply_markup=ReplyKeyboardRemove())
     ctx.user_data.clear()
     return ConversationHandler.END
+
+
+STATUS_EMOJI = {
+    "pending":       "⏳ Pendiente",
+    "confirmed":     "✅ Confirmada",
+    "in_progress":   "🔄 En progreso",
+    "waiting_parts": "⏸️ Esperando piezas",
+    "done":          "✔️ Terminada",
+    "cancelled":     "❌ Cancelada",
+    "no_show":       "👻 No presentado",
+    "unschedulable": "⚠️ No planificable",
+}
+
+
+async def cmd_estado(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not ctx.args:
+        await update.message.reply_text("Uso: /estado <número de cita>")
+        return
+    try:
+        job_id = int(ctx.args[0])
+    except ValueError:
+        await update.message.reply_text("El número de cita debe ser un número entero.")
+        return
+
+    try:
+        job = get_job(job_id)
+    except Exception as e:
+        await update.message.reply_text(f"❌ No se encontró la cita #{job_id}.")
+        return
+
+    estado = STATUS_EMOJI.get(job["status"], job["status"])
+    tipo   = TIPO_LABELS.get(job["repair_type_code"], job["repair_type_code"])
+    desc   = job.get("description") or ""
+    await update.message.reply_text(
+        f"📋 *Cita #{job['id']}*\n\n"
+        f"  📅 Fecha: {job['scheduled_date']}\n"
+        f"  🔧 Tipo: {tipo}\n"
+        f"  Estado: {estado}"
+        + (f"\n  📝 {desc[:60]}" if desc else ""),
+        parse_mode="Markdown",
+    )
 
 
 def build_reservar_handler() -> ConversationHandler:

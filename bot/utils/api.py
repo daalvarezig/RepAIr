@@ -116,6 +116,13 @@ def _get_or_create_customer(c: httpx.Client, name: str, phone: str) -> int:
 
 # ── Plan del día ──────────────────────────────────────────────────────────────
 
+def get_job(job_id: int) -> dict:
+    with _client() as c:
+        r = c.get(f"/jobs/{job_id}")
+        r.raise_for_status()
+        return r.json()
+
+
 def get_day_plan(plan_date: str) -> dict | None:
     with _client() as c:
         r = c.get("/plan/day", params={"workshop_id": WORKSHOP_ID, "plan_date": plan_date})
