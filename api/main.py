@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db.database import init_db
-from .routers import jobs, plan, mechanics
+from .routers import jobs, plan, mechanics, customers
 
 app = FastAPI(
     title="RepAIr API",
@@ -32,6 +32,7 @@ def startup():
 app.include_router(jobs.router)
 app.include_router(plan.router)
 app.include_router(mechanics.router)
+app.include_router(customers.router)
 
 
 @app.get("/health")

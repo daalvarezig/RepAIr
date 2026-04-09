@@ -1,0 +1,15 @@
+[Unit]
+Description=RepAIr Telegram Bot
+After=network.target repair.service
+
+[Service]
+Type=simple
+User=david
+WorkingDirectory=/opt/itopy.ai/apps/RepAIr/bot
+EnvironmentFile=/opt/itopy.ai/apps/RepAIr/bot/.env
+ExecStart=/home/david/itopyzone/venv/bin/python main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

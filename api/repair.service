@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=simple
 User=david
-WorkingDirectory=/opt/itopy.ai/apps/RepAIr/api
+WorkingDirectory=/opt/itopy.ai/apps/RepAIr
 EnvironmentFile=/opt/itopy.ai/apps/RepAIr/api/.env
-ExecStart=/home/david/itopyzone/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8010 --workers 2
+ExecStart=/home/david/itopyzone/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8010 --workers 2
 Restart=always
 RestartSec=5
 
