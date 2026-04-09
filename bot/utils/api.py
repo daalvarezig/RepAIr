@@ -90,7 +90,10 @@ def create_booking(
             "description":      description or "",
         })
         r.raise_for_status()
-        return r.json()
+        job = r.json()
+        # El cliente confirmó activamente → pasar a confirmed
+        c.patch(f"/jobs/{job['id']}/status", params={"new_status": "confirmed"})
+        return job
 
 
 def _get_or_create_customer(c: httpx.Client, name: str, phone: str) -> int:

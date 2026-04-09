@@ -665,6 +665,8 @@ async function reoptimize() {
 $('datePicker').value = today();
 $('datePicker').addEventListener('change', loadAll);
 loadAll();
+// Auto-refresh cada 60 segundos
+setInterval(loadAll, 60_000);
 </script>
 </body>
 </html>
