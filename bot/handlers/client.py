@@ -73,10 +73,17 @@ async def reservar_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return ConversationHandler.END
 
-    ctx.user_data["available_dates"] = {av["date"]: av for av in available}
-
-    keyboard = [[fmt_availability_line(av)] for av in available]
+    # Guardar mapa exacto texto_botón → fecha para comparación posterior
+    date_map = {}
+    keyboard  = []
+    for av in available:
+        label = fmt_availability_line(av).strip()
+        date_map[label] = av["date"]
+        keyboard.append([label])
     keyboard.append(["❌ Cancelar"])
+
+    ctx.user_data["date_map"]        = date_map
+    ctx.user_data["available_dates"] = {av["date"]: av for av in available}
 
     await update.message.reply_text(
         "🗓 *¿Para qué día quieres la cita?*",
@@ -92,13 +99,8 @@ async def reservar_date(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("Reserva cancelada.", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
-    # Extraer la fecha del texto del botón (formato "lun 10/04")
-    # La clave real está en user_data
-    chosen_date = None
-    for d, av in ctx.user_data["available_dates"].items():
-        if fmt_availability_line(av).strip() == text:
-            chosen_date = d
-            break
+    # Buscar la fecha usando el mapa exacto generado al crear el teclado
+    chosen_date = ctx.user_data.get("date_map", {}).get(text)
 
     if not chosen_date:
         await update.message.reply_text("Por favor elige una de las fechas del menú.")
@@ -107,11 +109,16 @@ async def reservar_date(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     ctx.user_data["date"] = chosen_date
     av = ctx.user_data["available_dates"][chosen_date]
 
-    # Mostrar solo tipos disponibles ese día
-    available_tipos = [
-        [f"{label}"] for code, label in TIPO_LABELS.items() if av.get(code)
-    ]
+    # Guardar mapa exacto texto_botón → code para tipos
+    tipo_map = {}
+    available_tipos = []
+    for code, label in TIPO_LABELS.items():
+        if av.get(code):
+            tipo_map[label] = code
+            available_tipos.append([label])
     available_tipos.append(["❌ Cancelar"])
+
+    ctx.user_data["tipo_map"] = tipo_map
 
     await update.message.reply_text(
         f"✅ *{chosen_date}* seleccionado.\n\n🔧 *¿Qué tipo de reparación necesitas?*",
@@ -127,12 +134,8 @@ async def reservar_tipo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("Reserva cancelada.", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
-    # Mapear label → code
-    chosen_code = None
-    for code, label in TIPO_LABELS.items():
-        if label == text:
-            chosen_code = code
-            break
+    # Buscar code usando el mapa exacto generado al crear el teclado
+    chosen_code = ctx.user_data.get("tipo_map", {}).get(text)
 
     if not chosen_code:
         await update.message.reply_text("Por favor elige una opción del menú.")
