@@ -96,7 +96,7 @@ async def reservar_date(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     # La clave real está en user_data
     chosen_date = None
     for d, av in ctx.user_data["available_dates"].items():
-        if fmt_availability_line(av) == text:
+        if fmt_availability_line(av).strip() == text:
             chosen_date = d
             break
 
