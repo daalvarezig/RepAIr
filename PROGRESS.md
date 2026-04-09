@@ -4,7 +4,7 @@
 
 ---
 
-## Estado general: 🟢 FASE 1 + BOT TELEGRAM COMPLETADOS
+## Estado general: 🟢 FASE 1 + BOT TELEGRAM COMPLETADOS (con mejoras)
 
 **Última actualización:** 2026-04-09
 
@@ -194,6 +194,12 @@ unschedulable → pending (revisión manual)
 - [x] Bug fix: `repair.service` WorkingDirectory → raíz del proyecto (`uvicorn api.main:app`)
 - [x] Push a GitHub (daalvarezig/RepAIr)
 
+### 2026-04-09 — Mejoras bot
+- [x] Notificación al owner (OWNER_ID) en cada nueva reserva confirmada
+- [x] `/estado <id>` — consulta estado de cualquier cita por número
+- [x] `/start` y `/help` actualizados con el nuevo comando
+- [x] `get_job()` añadido a `utils/api.py`
+
 ---
 
 ## Próximos pasos (Fase 3)
@@ -211,9 +217,7 @@ unschedulable → pending (revisión manual)
 - Lista de citas del día con estados y emojis
 
 ### Mejoras bot pendientes
-- Comando `/cancelar_cita` para el cliente (requiere auth por teléfono)
-- Notificación al owner cuando llega nueva reserva
-- `/estado <id>` para consultar estado de un trabajo
+- Comando `/cancelar_cita` para el cliente (ConversationHandler: pide teléfono → lista citas activas → cancela la elegida)
 
 ---
 
