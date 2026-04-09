@@ -1,0 +1,15 @@
+[Unit]
+Description=RepAIr API — Motor de planificación taller
+After=network.target
+
+[Service]
+Type=simple
+User=david
+WorkingDirectory=/opt/itopy.ai/apps/RepAIr/api
+EnvironmentFile=/opt/itopy.ai/apps/RepAIr/api/.env
+ExecStart=/home/david/itopyzone/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8010 --workers 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
