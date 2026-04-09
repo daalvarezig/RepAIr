@@ -4,7 +4,7 @@
 
 ---
 
-## Estado general: 🟢 FASE 1 COMPLETADA
+## Estado general: 🟢 FASE 1 + BOT TELEGRAM COMPLETADOS
 
 **Última actualización:** 2026-04-09
 
@@ -16,8 +16,8 @@
 |------|-------------|--------|
 | 0 | Infraestructura y modelo SQL | ✅ Completo |
 | 1 | Motor de reglas (FastAPI) | ✅ Completo |
-| 2 | Vista diaria por mecánico (frontend) | ⬜ Pendiente |
-| 3 | Bot Telegram reservas | ⬜ Pendiente |
+| 2 | Bot Telegram (clientes + owner) | ✅ Completo |
+| 3 | Vista diaria por mecánico (frontend) | ⬜ Pendiente |
 | 4 | V2 features (esperas, piezas, WhatsApp) | ⬜ Pendiente |
 | 5 | V3 / SaaS / KPIs | ⬜ Pendiente |
 
@@ -52,25 +52,36 @@ sumando la pausa de comida si el trabajo la atraviesa.
 ```
 /opt/itopy.ai/apps/RepAIr/
 ├── PROGRESS.md
-└── api/
-    ├── main.py                  ← FastAPI app, startup, CORS
-    ├── requirements.txt         ← fastapi, uvicorn, pydantic, python-dotenv
-    ├── .env                     ← DATABASE_PATH, PORT
-    ├── .env.example
-    ├── repair.service           ← systemd unit (instalar manualmente)
-    ├── db/
-    │   ├── database.py          ← get_connection(), init_db()
-    │   └── schema.sql           ← DDL completo con datos iniciales
-    ├── engine/
-    │   ├── rules.py             ← can_accept_job, acceptance_summary, JobSnapshot
-    │   ├── planner.py           ← plan_day, find_first_valid_slot, score_slot, calendar_end
-    │   └── reoptimizer.py       ← reoptimize_day, handle_job_delay
-    ├── routers/
-    │   ├── jobs.py              ← CRUD jobs + status transitions + delay
-    │   ├── plan.py              ← can-accept, plan/day, reoptimize, delay, GET day
-    │   └── mechanics.py         ← CRUD mecánicos
-    └── schemas/
-        └── models.py            ← Pydantic schemas (JobCreate, JobOut, PlanBlock, etc.)
+├── api/
+│   ├── main.py                  ← FastAPI app, startup, CORS
+│   ├── requirements.txt
+│   ├── .env                     ← DATABASE_PATH
+│   ├── repair.service           ← systemd unit API (puerto 8010)
+│   ├── db/
+│   │   ├── database.py          ← get_connection(), init_db()
+│   │   └── schema.sql           ← DDL completo con datos iniciales
+│   ├── engine/
+│   │   ├── rules.py             ← can_accept_job, JobSnapshot
+│   │   ├── planner.py           ← plan_day, calendar_end, score_slot
+│   │   └── reoptimizer.py       ← reoptimize_day, handle_job_delay
+│   ├── routers/
+│   │   ├── jobs.py              ← CRUD + status transitions + delay
+│   │   ├── plan.py              ← can-accept, day, reoptimize, delay
+│   │   ├── mechanics.py         ← CRUD mecánicos
+│   │   └── customers.py         ← GET/POST /customers/ (filtro por phone)
+│   └── schemas/
+│       └── models.py            ← Pydantic schemas
+└── bot/
+    ├── main.py                  ← ApplicationBuilder, handlers registrados
+    ├── requirements.txt         ← python-telegram-bot, httpx, python-dotenv
+    ├── .env                     ← TELEGRAM_TOKEN, OWNER_ID, API_BASE
+    ├── repair_bot.service       ← systemd unit bot
+    ├── handlers/
+    │   ├── common.py            ← /start, /help
+    │   ├── owner.py             ← /plan, /citas, /reoptimizar (solo owner)
+    │   └── client.py            ← /disponibilidad, /reservar (ConversationHandler)
+    └── utils/
+        └── api.py               ← Cliente HTTP → API RepAIr
 ```
 
 ---
@@ -101,6 +112,13 @@ sumando la pausa de comida si el trabajo la atraviesa.
 | GET | `/mechanics/?workshop_id=1` | Listar mecánicos |
 | POST | `/mechanics/` | Crear mecánico |
 | PATCH | `/mechanics/{id}/toggle` | Activar/desactivar mecánico |
+
+### Customers
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/customers/?workshop_id=1&phone=XXX` | Buscar cliente por teléfono |
+| POST | `/customers/` | Crear cliente |
+| GET | `/customers/{id}` | Detalle cliente |
 
 ---
 
@@ -166,26 +184,36 @@ unschedulable → pending (revisión manual)
 - [x] Bug fix: `overlaps_lunch` → `calendar_end` (compleja 10:00–16:00, no 15:00)
 - [x] Bug fix: INSERT jobs 13→14 values
 
+### 2026-04-09 — Bot Telegram completado
+- [x] `bot/utils/api.py` — cliente HTTP wrapping todos los endpoints de la API
+- [x] `bot/handlers/common.py` — /start y /help (msg diferente owner vs cliente)
+- [x] `bot/handlers/owner.py` — /plan (timeline por mecánico), /citas, /reoptimizar
+- [x] `bot/handlers/client.py` — /disponibilidad (7 días) y /reservar (ConversationHandler 5 estados)
+- [x] `api/routers/customers.py` — GET+POST /customers/ para lookup por teléfono
+- [x] `repair_bot.service` instalado y activo (systemd)
+- [x] Bug fix: `repair.service` WorkingDirectory → raíz del proyecto (`uvicorn api.main:app`)
+- [x] Push a GitHub (daalvarezig/RepAIr)
+
 ---
 
-## Próximos pasos (Fase 2)
+## Próximos pasos (Fase 3)
 
-### Para continuar aquí
-1. **Instalar servicio** (requiere sudo):
-   ```bash
-   sudo cp /opt/itopy.ai/apps/RepAIr/api/repair.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now repair
-   ```
+### Servicios en producción
+- `repair.service` → API en http://127.0.0.1:8010 ✅
+- `repair_bot.service` → Bot Telegram activo ✅
+- nginx → repair.itopy.ai → 127.0.0.1:8010 ✅
 
-2. **Nginx** para repair.itopy.ai → proxy_pass http://127.0.0.1:8010
+### Fase 3: Vista diaria (frontend)
+- `/opt/itopy.ai/apps/RepAIr/frontend/` — HTML/JS servido por nginx
+- Timeline tipo Gantt por mecánico (10:00–19:00)
+- Botón "Reoptimizar día" → POST /plan/reoptimize
+- Indicadores: % ocupación, nº complejas, huecos muertos
+- Lista de citas del día con estados y emojis
 
-3. **Fase 2: Vista diaria** — React/HTML en `/opt/itopy.ai/apps/RepAIr/frontend/`
-   - Timeline tipo Gantt por mecánico
-   - Botón "Reoptimizar día"
-   - Indicadores: % ocupación, complejas, huecos muertos
-
-4. **Fase 3: Bot Telegram** — `/reservar`, `/disponibilidad YYYY-MM-DD`
+### Mejoras bot pendientes
+- Comando `/cancelar_cita` para el cliente (requiere auth por teléfono)
+- Notificación al owner cuando llega nueva reserva
+- `/estado <id>` para consultar estado de un trabajo
 
 ---
 
