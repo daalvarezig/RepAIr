@@ -59,11 +59,11 @@ def create_job(body: JobCreate):
            (workshop_id, vehicle_id, customer_id, repair_type_code,
             base_duration, buffer, scheduled_date, status, priority,
             description, notes, early_start_required, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             body.workshop_id, body.vehicle_id, body.customer_id,
             body.repair_type_code, base, buffer,
-            body.scheduled_date, body.priority,
+            body.scheduled_date, body.status or "pending", body.priority,
             body.description, body.notes,
             1 if body.early_start_required else 0,
             now, now,
@@ -89,7 +89,7 @@ def get_job(job_id: int = Path(...)):
 # ── PATCH /jobs/{id}/status ───────────────────────────────────────────────────
 VALID_TRANSITIONS = {
     "pending":       {"confirmed", "cancelled", "no_show"},
-    "confirmed":     {"in_progress", "cancelled", "no_show"},
+    "confirmed":     {"in_progress", "cancelled", "no_show", "pending"},
     "in_progress":   {"done", "waiting_parts", "cancelled"},
     "waiting_parts": {"in_progress", "cancelled"},
     "done":          set(),
@@ -99,7 +99,7 @@ VALID_TRANSITIONS = {
 }
 
 @router.patch("/{job_id}/status")
-def update_status(job_id: int, new_status: str, reason: Optional[str] = None):
+def update_status(job_id: int, new_status: str, reason: Optional[str] = None, notes: Optional[str] = None):
     conn = get_connection()
     row  = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
     if not row:
@@ -112,10 +112,16 @@ def update_status(job_id: int, new_status: str, reason: Optional[str] = None):
         raise HTTPException(400, f"Transición no válida: {current} → {new_status}")
 
     now = datetime.utcnow().isoformat()
-    conn.execute(
-        "UPDATE jobs SET status = ?, updated_at = ? WHERE id = ?",
-        (new_status, now, job_id)
-    )
+    if notes is not None:
+        conn.execute(
+            "UPDATE jobs SET status = ?, notes = ?, updated_at = ? WHERE id = ?",
+            (new_status, notes, now, job_id)
+        )
+    else:
+        conn.execute(
+            "UPDATE jobs SET status = ?, updated_at = ? WHERE id = ?",
+            (new_status, now, job_id)
+        )
     conn.execute(
         "INSERT INTO job_status_history (job_id, from_status, to_status, reason) VALUES (?,?,?,?)",
         (job_id, current, new_status, reason)

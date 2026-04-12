@@ -36,6 +36,7 @@ class JobCreate(BaseModel):
     customer_id:        Optional[int] = None
     repair_type_code:   RepairTypeCode
     scheduled_date:     str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    status:             Optional[JobStatus] = None  # None → "pending" por defecto
     priority:           int = Field(5, ge=1, le=10)
     description:        Optional[str] = None
     notes:              Optional[str] = None
