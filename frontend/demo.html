@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepAIr — Gestión inteligente de taller</title>
+<style>
+  :root {
+    --bg:       #05050f;
+    --panel:    #0a0a2a;
+    --border:   #00c8ff;
+    --glow:     #00f3ff;
+    --dim:      #1a1a3a;
+    --text:     #a0d8ef;
+    --bright:   #e0f8ff;
+    --accent:   #ff6b35;
+    --green:    #00ffaa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,200,255,0.012) 2px, rgba(0,200,255,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem 2rem;
+    position: relative;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(0,200,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .logo {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    letter-spacing: -2px;
+    color: var(--bright);
+    text-shadow: 0 0 30px rgba(0,200,255,0.6), 0 0 60px rgba(0,200,255,0.3);
+    margin-bottom: 0.5rem;
+  }
+
+  .logo span {
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(255,107,53,0.6);
+  }
+
+  .logo-sub {
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    letter-spacing: 6px;
+    color: var(--border);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+  }
+
+  .tagline {
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    color: var(--bright);
+    max-width: 700px;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+  }
+
+  .tagline em {
+    color: var(--glow);
+    font-style: normal;
+  }
+
+  .sub-tagline {
+    font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+    color: var(--text);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+    opacity: 0.85;
+  }
+
+  .hero-badges {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 4rem;
+  }
+
+  .badge {
+    border: 1px solid var(--border);
+    background: rgba(0,200,255,0.06);
+    color: var(--glow);
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .hero-img {
+    width: 100%;
+    max-width: 1100px;
+    border: 1px solid rgba(0,200,255,0.3);
+    box-shadow: 0 0 40px rgba(0,200,255,0.15), 0 0 80px rgba(0,200,255,0.07);
+    border-radius: 2px;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--border);
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    color: var(--bright);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .section-title span { color: var(--glow); }
+
+  .section-desc {
+    font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+    color: var(--text);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+    opacity: 0.9;
+  }
+
+  /* ── DASHBOARD SECTION ── */
+  .dashboard-section {
+    border-top: 1px solid rgba(0,200,255,0.15);
+  }
+
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .screenshot {
+    border: 1px solid rgba(0,200,255,0.25);
+    box-shadow: 0 0 20px rgba(0,200,255,0.08);
+    width: 100%;
+    display: block;
+    border-radius: 2px;
+    transition: box-shadow 0.3s, border-color 0.3s;
+  }
+
+  .screenshot:hover {
+    box-shadow: 0 0 35px rgba(0,200,255,0.2);
+    border-color: rgba(0,200,255,0.5);
+  }
+
+  .screenshot-full {
+    grid-column: 1 / -1;
+  }
+
+  /* ── FEATURES GRID ── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .feature-card {
+    background: var(--panel);
+    border: 1px solid rgba(0,200,255,0.15);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  .feature-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .feature-name {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--glow);
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-desc {
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+
+  /* ── BOT SECTION ── */
+  .bot-section {
+    border-top: 1px solid rgba(0,200,255,0.15);
+  }
+
+  .bot-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .bot-screenshots {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .bot-phone {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  .bot-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-top: 1rem;
+  }
+
+  .bot-feature {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .bot-feature-num {
+    font-size: 1.8rem;
+    color: rgba(0,200,255,0.2);
+    font-weight: 900;
+    line-height: 1;
+    min-width: 2.5rem;
+  }
+
+  .bot-feature-text strong {
+    display: block;
+    color: var(--bright);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+  }
+
+  .bot-feature-text p {
+    font-size: 0.82rem;
+    line-height: 1.7;
+    opacity: 0.8;
+  }
+
+  /* ── AI SECTION ── */
+  .ai-section {
+    border-top: 1px solid rgba(0,200,255,0.15);
+    text-align: center;
+  }
+
+  .ai-section .section-desc {
+    margin: 0 auto 3rem;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid rgba(0,200,255,0.2);
+    padding: 2rem 1.5rem;
+    position: relative;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .stat-num {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--glow);
+    text-shadow: 0 0 20px rgba(0,243,255,0.4);
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text);
+    opacity: 0.7;
+    margin-top: 0.3rem;
+  }
+
+  /* ── CTA ── */
+  .cta-section {
+    border-top: 1px solid rgba(0,200,255,0.15);
+    text-align: center;
+    padding-bottom: 8rem;
+  }
+
+  .cta-section .section-title { margin-bottom: 1rem; }
+
+  .cta-desc {
+    font-size: 1rem;
+    color: var(--text);
+    max-width: 500px;
+    margin: 0 auto 3rem;
+    line-height: 1.8;
+    opacity: 0.85;
+  }
+
+  .cta-box {
+    display: inline-block;
+    border: 1px solid var(--accent);
+    background: rgba(255,107,53,0.08);
+    color: var(--accent);
+    padding: 1rem 3rem;
+    font-size: 0.85rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255,107,53,0.4);
+    box-shadow: 0 0 20px rgba(255,107,53,0.1);
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+  }
+
+  .built-with {
+    margin-top: 5rem;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(160,216,239,0.3);
+  }
+
+  .built-with span { color: rgba(0,200,255,0.4); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 80px;
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+    box-shadow: 0 0 8px var(--border);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .dashboard-layout { grid-template-columns: 1fr; }
+    .bot-layout { grid-template-columns: 1fr; }
+    .bot-phone { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="logo">Rep<span>AI</span>r</div>
+  <div class="logo-sub">// Sistema de gestión de taller</div>
+  <h1 class="tagline">Tu taller recibe reservas<br><em>en automático.</em></h1>
+  <p class="sub-tagline">
+    RepAIr gestiona las citas, organiza a los mecánicos y optimiza el día
+    sin que tengas que mover un dedo. El cliente reserva, la IA planifica, tú supervisas.
+  </p>
+  <div class="hero-badges">
+    <div class="badge">IA · Planificación automática</div>
+    <div class="badge">Reservas sin llamadas</div>
+    <div class="badge">Dashboard en tiempo real</div>
+    <div class="badge">Sin papel · Sin fricción</div>
+  </div>
+  <img src="assets/photo_8.jpg" alt="RepAIr dashboard y bot" class="hero-img">
+</div>
+
+<!-- ── DASHBOARD ── -->
+<section class="dashboard-section">
+  <div class="section-label">// 01 — Panel de control</div>
+  <h2 class="section-title">Todo el día,<br><span>de un vistazo.</span></h2>
+  <div class="divider"></div>
+  <p class="section-desc">
+    El panel muestra en tiempo real el Gantt de mecánicos, los KPIs del día
+    y el estado de cada cita. Se refresca automáticamente y se puede reoptimizar
+    con un solo clic cuando cambia algo.
+  </p>
+
+  <div class="dashboard-layout">
+    <img src="assets/photo_1.jpg" alt="Dashboard día 11/04" class="screenshot">
+    <img src="assets/photo_6.jpg" alt="Dashboard día 11/04 vista completa" class="screenshot">
+    <img src="assets/photo_2.jpg" alt="Dashboard día 10/04" class="screenshot screenshot-full">
+  </div>
+
+  <div class="features">
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <div class="feature-name">KPIs en tiempo real</div>
+      <p class="feature-desc">Citas totales, confirmadas, complejas, capacidad libre y no planificables. De un vistazo.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🗓</span>
+      <div class="feature-name">Timeline por mecánico</div>
+      <p class="feature-desc">Gantt visual con bloques por tipo de reparación. Rápida, Standard o Compleja en colores.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <div class="feature-name">Reoptimización</div>
+      <p class="feature-desc">El motor de IA redistribuye la carga de trabajo al instante cuando llega una nueva cita o cambia algo.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔄</span>
+      <div class="feature-name">Auto-refresco</div>
+      <p class="feature-desc">El panel se actualiza solo cada minuto. Sin F5, sin perder el hilo del día.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── RESERVAS ── -->
+<section class="bot-section">
+  <div class="section-label">// 02 — Reservas automáticas</div>
+  <h2 class="section-title">El cliente reserva solo.<br><span>Sin llamarte.</span></h2>
+  <div class="divider"></div>
+  <p class="section-desc">
+    El sistema guía al cliente paso a paso: elige día, tipo de reparación y confirma.
+    Todo verificado en tiempo real contra la disponibilidad del taller.
+    La cita aparece en tu panel en segundos.
+  </p>
+
+  <div class="bot-layout">
+    <div class="bot-screenshots">
+      <img src="assets/photo_5.jpg" alt="Flujo de reserva automática" class="screenshot bot-phone">
+    </div>
+    <div class="bot-features">
+      <div class="bot-feature">
+        <div class="bot-feature-num">01</div>
+        <div class="bot-feature-text">
+          <strong>Solo días disponibles</strong>
+          <p>El sistema muestra únicamente los días con hueco real. Imposible reservar en un día lleno.</p>
+        </div>
+      </div>
+      <div class="bot-feature">
+        <div class="bot-feature-num">02</div>
+        <div class="bot-feature-text">
+          <strong>Tipo de reparación</strong>
+          <p>Rápida (~45 min), Standard (~90 min) o Compleja (~4h). La duración real entra directa en la planificación.</p>
+        </div>
+      </div>
+      <div class="bot-feature">
+        <div class="bot-feature-num">03</div>
+        <div class="bot-feature-text">
+          <strong>Confirmación instantánea</strong>
+          <p>El cliente recibe resumen y número de cita al momento. Sin esperar tu respuesta.</p>
+        </div>
+      </div>
+      <div class="bot-feature">
+        <div class="bot-feature-num">04</div>
+        <div class="bot-feature-text">
+          <strong>Tú te enteras al instante</strong>
+          <p>Notificación inmediata con todos los datos. La cita ya está en el dashboard sin que hagas nada.</p>
+        </div>
+      </div>
+      <div class="bot-feature">
+        <div class="bot-feature-num">05</div>
+        <div class="bot-feature-text">
+          <strong>Cancelaciones sin llamadas</strong>
+          <p>El cliente gestiona su cancelación solo. Tú ves el hueco liberado en el panel y la IA reoptimiza.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:3rem">
+    <img src="assets/photo_7.jpg" alt="Otro cliente reservando" class="screenshot" style="max-width:340px;display:block;margin:0 auto;">
+  </div>
+
+  <!-- Canal nota -->
+  <div style="margin-top:4rem;background:var(--panel);border:1px solid rgba(0,200,255,0.15);padding:2rem;max-width:700px;margin-left:auto;margin-right:auto;margin-top:4rem">
+    <div class="section-label" style="margin-bottom:0.75rem">// Demo en Telegram — adaptable a cualquier canal</div>
+    <p style="font-size:0.88rem;line-height:1.8;opacity:0.85">
+      Esta demo corre sobre <strong style="color:var(--bright)">Telegram</strong>, pero el sistema es agnóstico al canal.
+      Se puede conectar a <strong style="color:var(--bright)">WhatsApp Business</strong>,
+      <strong style="color:var(--bright)">Instagram DMs</strong> o un
+      <strong style="color:var(--bright)">chat interno</strong> para que el owner introduzca reservas
+      cuando la llamada entra por teléfono. El motor de planificación y el dashboard son los mismos.
+    </p>
+  </div>
+</section>
+
+<!-- ── IA ── -->
+<section class="ai-section">
+  <div class="section-label">// 03 — Motor de planificación</div>
+  <h2 class="section-title">La IA que <span>nunca descansa.</span></h2>
+  <div class="divider" style="margin:1.5rem auto"></div>
+  <p class="section-desc">
+    Cada vez que entra una cita, el motor recalcula el plan óptimo para el día.
+    Respeta la carga de cada mecánico, los tiempos de comida, las reparaciones complejas
+    y la capacidad máxima del taller.
+  </p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-num">3</span>
+      <div class="stat-label">tipos de reparación</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">∞</span>
+      <div class="stat-label">mecánicos configurables</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">0</span>
+      <div class="stat-label">conflictos de agenda</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">24/7</span>
+      <div class="stat-label">sistema activo</div>
+    </div>
+  </div>
+
+  <img src="assets/photo_4.jpg" alt="Dashboard vista completa" class="screenshot">
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <div class="section-label">// 04 — Siguiente paso</div>
+  <h2 class="section-title">¿Tu taller,<br><span>en piloto automático?</span></h2>
+  <div class="divider" style="margin:1.5rem auto"></div>
+  <p class="cta-desc">
+    RepAIr es un sistema a medida, desplegado en tu propio servidor,
+    con tu branding y tus mecánicos. Sin suscripciones. Tuyo.
+  </p>
+  <div class="cta-box">Solicitar demo</div>
+
+  <div class="built-with">
+    Construido con <span>Python · FastAPI · IA · SQLite</span>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepAIr — Mockup interactivo</title>
+<style>
+  :root {
+    --bg:      #05050f;
+    --panel:   #0a0a2a;
+    --border:  #00c8ff;
+    --glow:    #00f3ff;
+    --dim:     #1a1a3a;
+    --text:    #a0d8ef;
+    --bright:  #e0f8ff;
+    --accent:  #ff6b35;
+    --green:   #00ffaa;
+    --yellow:  #ffd166;
+    --purple:  #c77dff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+  }
+
+  /* scanlines */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,200,255,0.012) 2px, rgba(0,200,255,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: 48px;
+    background: var(--panel);
+    border-bottom: 1px solid rgba(0,200,255,0.2);
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    gap: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .topbar-logo {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--bright);
+    letter-spacing: -1px;
+  }
+  .topbar-logo span { color: var(--accent); }
+
+  .topbar-sep { color: rgba(0,200,255,0.2); }
+
+  .topbar-tag {
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--border);
+    opacity: 0.7;
+  }
+
+  .topbar-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    margin-left: auto;
+    animation: pulse 2s infinite;
+  }
+  .topbar-live {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 48px);
+    gap: 0;
+  }
+
+  /* ── LEFT: PHONE ── */
+  .phone-side {
+    width: 38%;
+    min-width: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem 1.5rem 2rem;
+    border-right: 1px solid rgba(0,200,255,0.12);
+    background: radial-gradient(ellipse at 50% 50%, rgba(0,200,255,0.04) 0%, transparent 70%);
+  }
+
+  .phone-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .phone-label {
+    font-size: 0.6rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--border);
+    opacity: 0.5;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .phone-frame {
+    background: #0e0e1a;
+    border: 2px solid rgba(0,200,255,0.35);
+    border-radius: 36px;
+    box-shadow:
+      0 0 0 1px rgba(0,200,255,0.1),
+      0 0 40px rgba(0,200,255,0.12),
+      inset 0 0 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 9/19;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* notch */
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 26px;
+    background: #0e0e1a;
+    border-radius: 0 0 18px 18px;
+    z-index: 10;
+    border-bottom: 1px solid rgba(0,200,255,0.15);
+  }
+
+  /* home bar */
+  .phone-frame::after {
+    content: '';
+    position: absolute;
+    bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 4px;
+    background: rgba(0,200,255,0.25);
+    border-radius: 2px;
+    z-index: 10;
+  }
+
+  /* ── TELEGRAM UI ── */
+  .tg-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-top: 48px; /* space for notch */
+    padding-bottom: 20px;
+  }
+
+  .tg-header {
+    background: #111130;
+    border-bottom: 1px solid rgba(0,200,255,0.1);
+    padding: 0.5rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .tg-back {
+    color: var(--border);
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  .tg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0078d4, #00c8ff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(0,200,255,0.4);
+  }
+
+  .tg-info { flex: 1; min-width: 0; }
+
+  .tg-name {
+    font-size: 0.72rem;
+    color: var(--bright);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tg-status {
+    font-size: 0.58rem;
+    color: var(--green);
+    opacity: 0.9;
+  }
+
+  .tg-chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    scroll-behavior: smooth;
+  }
+
+  .tg-chat::-webkit-scrollbar { width: 3px; }
+  .tg-chat::-webkit-scrollbar-track { background: transparent; }
+  .tg-chat::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.2); border-radius: 2px; }
+
+  /* messages */
+  .msg {
+    max-width: 84%;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.72rem;
+    line-height: 1.55;
+    border-radius: 12px;
+    animation: msgIn 0.25s ease-out;
+    word-break: break-word;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .msg-bot {
+    align-self: flex-start;
+    background: #1a1a3e;
+    border: 1px solid rgba(0,200,255,0.18);
+    color: var(--bright);
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    background: rgba(0,120,212,0.35);
+    border: 1px solid rgba(0,200,255,0.2);
+    color: var(--bright);
+    border-bottom-right-radius: 4px;
+    text-align: right;
+  }
+
+  /* typing indicator */
+  .typing {
+    align-self: flex-start;
+    display: none;
+    gap: 4px;
+    padding: 0.5rem 0.75rem;
+    background: #1a1a3e;
+    border: 1px solid rgba(0,200,255,0.18);
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+    align-items: center;
+  }
+
+  .typing.visible { display: flex; }
+
+  .typing span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--border);
+    animation: dot 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dot {
+    0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+    40%         { transform: scale(1);   opacity: 1; }
+  }
+
+  /* keyboard buttons */
+  .tg-keyboard {
+    padding: 0.4rem 0.5rem;
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(0,200,255,0.1);
+    flex-shrink: 0;
+  }
+
+  .tg-keyboard.visible { display: flex; }
+
+  .kb-btn {
+    background: #111130;
+    border: 1px solid rgba(0,200,255,0.25);
+    color: var(--border);
+    font-family: 'Courier New', monospace;
+    font-size: 0.62rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    cursor: default;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kb-btn.active {
+    background: rgba(0,200,255,0.15);
+    border-color: var(--border);
+    color: var(--bright);
+    box-shadow: 0 0 8px rgba(0,200,255,0.2);
+  }
+
+  /* ── RIGHT: DASHBOARD ── */
+  .dashboard-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 2rem 1rem 1.5rem;
+    overflow: hidden;
+    gap: 0.75rem;
+  }
+
+  /* dash header */
+  .dash-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .dash-date {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--border);
+    opacity: 0.7;
+  }
+
+  .dash-reopt {
+    margin-left: auto;
+    border: 1px solid rgba(255,107,53,0.4);
+    background: rgba(255,107,53,0.06);
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    cursor: default;
+  }
+
+  /* KPIs */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .kpi {
+    background: var(--panel);
+    border: 1px solid rgba(0,200,255,0.15);
+    padding: 0.65rem 0.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.4s, border-color 0.4s;
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    opacity: 0.4;
+  }
+
+  .kpi.flash {
+    border-color: var(--glow);
+    box-shadow: 0 0 20px rgba(0,243,255,0.25);
+  }
+
+  .kpi-val {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--glow);
+    text-shadow: 0 0 12px rgba(0,243,255,0.4);
+    line-height: 1;
+    transition: all 0.3s;
+  }
+
+  .kpi-val.flash-num {
+    color: var(--green);
+    text-shadow: 0 0 16px rgba(0,255,170,0.5);
+  }
+
+  .kpi-label {
+    font-size: 0.58rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    opacity: 0.6;
+    margin-top: 0.2rem;
+  }
+
+  /* Gantt */
+  .gantt-section {
+    flex-shrink: 0;
+  }
+
+  .gantt-title {
+    font-size: 0.6rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--border);
+    opacity: 0.6;
+    margin-bottom: 0.5rem;
+  }
+
+  .gantt-hours {
+    display: flex;
+    margin-left: 70px;
+    margin-bottom: 0.25rem;
+    position: relative;
+  }
+
+  .gantt-hour {
+    flex: 1;
+    font-size: 0.52rem;
+    color: rgba(160,216,239,0.35);
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  .gantt-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    height: 32px;
+  }
+
+  .gantt-mechanic {
+    width: 70px;
+    font-size: 0.6rem;
+    color: var(--text);
+    opacity: 0.7;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gantt-track {
+    flex: 1;
+    height: 100%;
+    background: rgba(0,200,255,0.04);
+    border: 1px solid rgba(0,200,255,0.08);
+    position: relative;
+    border-radius: 2px;
+  }
+
+  .gantt-block {
+    position: absolute;
+    top: 3px; bottom: 3px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all 0.5s;
+  }
+
+  .block-rapida {
+    background: rgba(0,255,170,0.2);
+    border: 1px solid rgba(0,255,170,0.4);
+    color: var(--green);
+  }
+
+  .block-standard {
+    background: rgba(0,200,255,0.2);
+    border: 1px solid rgba(0,200,255,0.4);
+    color: var(--glow);
+  }
+
+  .block-compleja {
+    background: rgba(199,125,255,0.2);
+    border: 1px solid rgba(199,125,255,0.4);
+    color: var(--purple);
+  }
+
+  .block-comida {
+    background: rgba(255,209,102,0.12);
+    border: 1px solid rgba(255,209,102,0.25);
+    color: var(--yellow);
+  }
+
+  .block-new {
+    animation: blockAppear 0.6s ease-out;
+  }
+
+  @keyframes blockAppear {
+    from { opacity: 0; transform: scaleX(0); transform-origin: left; }
+    to   { opacity: 1; transform: scaleX(1); }
+  }
+
+  /* Table */
+  .table-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-title {
+    font-size: 0.6rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--border);
+    opacity: 0.6;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.68rem;
+  }
+
+  th {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(160,216,239,0.4);
+    text-align: left;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid rgba(0,200,255,0.12);
+    font-weight: normal;
+  }
+
+  td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgba(0,200,255,0.06);
+    color: var(--text);
+  }
+
+  tr.row-new {
+    animation: rowAppear 0.5s ease-out;
+  }
+
+  @keyframes rowAppear {
+    from { opacity: 0; background: rgba(0,255,170,0.08); }
+    to   { opacity: 1; background: transparent; }
+  }
+
+  .badge-status {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .s-confirmed {
+    background: rgba(0,255,170,0.12);
+    border: 1px solid rgba(0,255,170,0.3);
+    color: var(--green);
+  }
+
+  .s-inprogress {
+    background: rgba(0,200,255,0.12);
+    border: 1px solid rgba(0,200,255,0.3);
+    color: var(--glow);
+  }
+
+  .s-pending {
+    background: rgba(255,209,102,0.1);
+    border: 1px solid rgba(255,209,102,0.25);
+    color: var(--yellow);
+  }
+
+  .type-r { color: var(--green); }
+  .type-s { color: var(--glow); }
+  .type-c { color: var(--purple); }
+
+  /* notification badge on dashboard */
+  .notif {
+    position: fixed;
+    top: 60px;
+    right: 2rem;
+    background: var(--panel);
+    border: 1px solid var(--green);
+    box-shadow: 0 0 20px rgba(0,255,170,0.2);
+    padding: 0.6rem 1rem;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--green);
+    animation: notifIn 0.3s ease-out;
+    z-index: 100;
+    display: none;
+  }
+
+  .notif.visible {
+    display: block;
+  }
+
+  @keyframes notifIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* progress bar at bottom */
+  .progress-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--border), var(--glow));
+    box-shadow: 0 0 6px var(--glow);
+    width: 0%;
+    transition: width 0.5s linear;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">Rep<span>AI</span>r</div>
+  <div class="topbar-sep">//</div>
+  <div class="topbar-tag">Sistema de gestión inteligente de taller</div>
+  <div class="topbar-dot"></div>
+  <div class="topbar-live">Sistema activo</div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">🔔 Nueva cita confirmada — #0042 · Carlos Ruiz</div>
+
+<!-- MAIN -->
+<div class="layout">
+
+  <!-- PHONE -->
+  <div class="phone-side">
+    <div class="phone-wrap">
+      <div class="phone-label">// cliente reserva via telegram</div>
+      <div class="phone-frame">
+        <div class="tg-wrap">
+
+          <div class="tg-header">
+            <div class="tg-back">‹</div>
+            <div class="tg-avatar">R</div>
+            <div class="tg-info">
+              <div class="tg-name">RepAIr Bot</div>
+              <div class="tg-status">● online</div>
+            </div>
+          </div>
+
+          <div class="tg-chat" id="chat">
+            <div class="typing" id="typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="tg-keyboard" id="keyboard"></div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard-side">
+
+    <div class="dash-header">
+      <div class="dash-date">// Panel del taller — Mié 16 Abr 2025</div>
+      <div class="dash-reopt">⚡ Reoptimizar</div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi" id="kpi-total">
+        <div class="kpi-val" id="kv-total">5</div>
+        <div class="kpi-label">Citas hoy</div>
+      </div>
+      <div class="kpi" id="kpi-conf">
+        <div class="kpi-val" id="kv-conf">4</div>
+        <div class="kpi-label">Confirmadas</div>
+      </div>
+      <div class="kpi" id="kpi-prog">
+        <div class="kpi-val" id="kv-prog">1</div>
+        <div class="kpi-label">En progreso</div>
+      </div>
+      <div class="kpi" id="kpi-comp">
+        <div class="kpi-val" id="kv-comp">1</div>
+        <div class="kpi-label">Complejas</div>
+      </div>
+      <div class="kpi" id="kpi-libre">
+        <div class="kpi-val" id="kv-libre" style="color:var(--green);text-shadow:0 0 12px rgba(0,255,170,0.4)">1</div>
+        <div class="kpi-label">Huecos libres</div>
+      </div>
+    </div>
+
+    <!-- Gantt -->
+    <div class="gantt-section">
+      <div class="gantt-title">// Timeline mecánicos</div>
+      <div class="gantt-hours">
+        <div class="gantt-hour">9:00</div>
+        <div class="gantt-hour">10:00</div>
+        <div class="gantt-hour">11:00</div>
+        <div class="gantt-hour">12:00</div>
+        <div class="gantt-hour">13:00</div>
+        <div class="gantt-hour">14:00</div>
+        <div class="gantt-hour">15:00</div>
+        <div class="gantt-hour">16:00</div>
+        <div class="gantt-hour">17:00</div>
+        <div class="gantt-hour">18:00</div>
+      </div>
+
+      <!-- Carlos -->
+      <div class="gantt-row">
+        <div class="gantt-mechanic">Carlos G.</div>
+        <div class="gantt-track" id="track-carlos">
+          <!-- 9:00-10:00 rápida → left=0%, width=11.1% -->
+          <div class="gantt-block block-rapida" style="left:0%;width:11.1%">Rápida</div>
+          <!-- 10:00-11:30 standard → left=11.1%, width=16.7% -->
+          <div class="gantt-block block-standard" style="left:11.1%;width:16.7%">Std</div>
+          <!-- comida 14:00-15:00 → left=55.6%, width=11.1% -->
+          <div class="gantt-block block-comida" style="left:55.6%;width:11.1%">Comida</div>
+          <!-- 15:00-17:00 standard → left=66.7%, width=22.2% -->
+          <div class="gantt-block block-standard" style="left:66.7%;width:22.2%">Std</div>
+        </div>
+      </div>
+
+      <!-- Miguel -->
+      <div class="gantt-row">
+        <div class="gantt-mechanic">Miguel R.</div>
+        <div class="gantt-track" id="track-miguel">
+          <!-- 9:00-14:00 compleja → left=0%, width=55.6% -->
+          <div class="gantt-block block-compleja" style="left:0%;width:55.6%">Compleja</div>
+          <!-- comida 14:00-15:00 -->
+          <div class="gantt-block block-comida" style="left:55.6%;width:11.1%">Comida</div>
+          <!-- 15:00-16:00 rápida -->
+          <div class="gantt-block block-rapida" style="left:66.7%;width:11.1%">Rápida</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+      <div class="table-title">// Citas del día</div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Mecánico</th>
+            <th>Hora</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-table">
+          <tr>
+            <td style="opacity:0.5">#0037</td>
+            <td>Ana Torres</td>
+            <td><span class="type-r">● Rápida</span></td>
+            <td>Carlos G.</td>
+            <td>09:00</td>
+            <td><span class="badge-status s-inprogress">En progreso</span></td>
+          </tr>
+          <tr>
+            <td style="opacity:0.5">#0038</td>
+            <td>Pedro Sanz</td>
+            <td><span class="type-s">● Standard</span></td>
+            <td>Carlos G.</td>
+            <td>10:00</td>
+            <td><span class="badge-status s-confirmed">Confirmada</span></td>
+          </tr>
+          <tr>
+            <td style="opacity:0.5">#0039</td>
+            <td>Luis Mora</td>
+            <td><span class="type-c">● Compleja</span></td>
+            <td>Miguel R.</td>
+            <td>09:00</td>
+            <td><span class="badge-status s-inprogress">En progreso</span></td>
+          </tr>
+          <tr>
+            <td style="opacity:0.5">#0040</td>
+            <td>Sara Vidal</td>
+            <td><span class="type-r">● Rápida</span></td>
+            <td>Miguel R.</td>
+            <td>15:00</td>
+            <td><span class="badge-status s-confirmed">Confirmada</span></td>
+          </tr>
+          <tr>
+            <td style="opacity:0.5">#0041</td>
+            <td>Javi Pons</td>
+            <td><span class="type-s">● Standard</span></td>
+            <td>Carlos G.</td>
+            <td>15:00</td>
+            <td><span class="badge-status s-confirmed">Confirmada</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<div class="progress-bar" id="progress"></div>
+
+<script>
+const chatEl     = document.getElementById('chat');
+const typingEl   = document.getElementById('typing');
+const keyboardEl = document.getElementById('keyboard');
+const notifEl    = document.getElementById('notif');
+const progressEl = document.getElementById('progress');
+
+// ── helpers ──────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function addMsg(type, text) {
+  // remove typing from chat, add message, re-append typing at end
+  if (typingEl.parentNode === chatEl) chatEl.removeChild(typingEl);
+  const div = document.createElement('div');
+  div.className = `msg msg-${type}`;
+  div.innerHTML = text.replace(/\n/g, '<br>');
+  chatEl.appendChild(div);
+  chatEl.appendChild(typingEl);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  typingEl.classList.add('visible');
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function hideTyping() {
+  typingEl.classList.remove('visible');
+}
+
+function showKeyboard(buttons) {
+  keyboardEl.innerHTML = '';
+  buttons.forEach(txt => {
+    const btn = document.createElement('button');
+    btn.className = 'kb-btn';
+    btn.textContent = txt;
+    keyboardEl.appendChild(btn);
+  });
+  keyboardEl.classList.add('visible');
+}
+
+function hideKeyboard() {
+  keyboardEl.classList.remove('visible');
+}
+
+function activateKey(text) {
+  [...keyboardEl.querySelectorAll('.kb-btn')].forEach(b => {
+    if (b.textContent === text) b.classList.add('active');
+  });
+}
+
+function flashKpi(id, newVal) {
+  const kpi = document.getElementById(id);
+  const val = kpi.querySelector('.kpi-val');
+  kpi.classList.add('flash');
+  val.classList.add('flash-num');
+  val.textContent = newVal;
+  setTimeout(() => {
+    kpi.classList.remove('flash');
+    val.classList.remove('flash-num');
+  }, 2000);
+}
+
+function addGanttBlock() {
+  const track = document.getElementById('track-carlos');
+  const block = document.createElement('div');
+  // 11:30 → offset from 9:00 = 150min / 540min = 27.8%
+  // 90min standard (operational 120min / 540 = 22.2%)
+  block.className = 'gantt-block block-standard block-new';
+  block.style.left  = '27.8%';
+  block.style.width = '22.2%';
+  block.textContent = 'Std';
+  track.appendChild(block);
+}
+
+function addTableRow() {
+  const tbody = document.getElementById('jobs-table');
+  const tr = document.createElement('tr');
+  tr.className = 'row-new';
+  tr.innerHTML = `
+    <td style="opacity:0.5">#0042</td>
+    <td style="color:var(--bright);font-weight:700">Carlos Ruiz</td>
+    <td><span class="type-s">● Standard</span></td>
+    <td>Carlos G.</td>
+    <td>11:30</td>
+    <td><span class="badge-status s-confirmed">Confirmada</span></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function showNotif() {
+  notifEl.classList.add('visible');
+  setTimeout(() => notifEl.classList.remove('visible'), 3500);
+}
+
+function resetAll() {
+  // clear chat messages (except typing)
+  [...chatEl.querySelectorAll('.msg')].forEach(m => m.remove());
+  hideTyping();
+  hideKeyboard();
+  // remove added gantt block
+  const newBlock = document.querySelector('.block-new');
+  if (newBlock) newBlock.remove();
+  // remove added row
+  const newRow = document.querySelector('.row-new');
+  if (newRow) newRow.remove();
+  // reset kpis
+  document.getElementById('kv-total').textContent = '5';
+  document.getElementById('kv-conf').textContent  = '4';
+  document.getElementById('kv-libre').textContent  = '1';
+}
+
+// ── animation sequence ────────────────────────────────────────────
+const TOTAL_DURATION = 34000; // ms for progress bar
+
+async function runAnimation() {
+  // reset
+  resetAll();
+  progressEl.style.transition = 'none';
+  progressEl.style.width = '0%';
+  await sleep(50);
+  progressEl.style.transition = `width ${TOTAL_DURATION}ms linear`;
+  progressEl.style.width = '100%';
+
+  await sleep(1200);
+
+  // 1. user sends /reservar
+  addMsg('user', '/reservar');
+  await sleep(900);
+
+  // 2. bot types
+  showTyping();
+  await sleep(1400);
+  hideTyping();
+
+  // 3. bot greets + dates keyboard
+  addMsg('bot', '¡Hola! Soy el asistente de <strong>RepAIr</strong> 👋\n¿Para qué fecha quieres tu cita?');
+  await sleep(400);
+  showKeyboard(['📅 Lun 14 Abr', '📅 Mar 15 Abr', '📅 Mié 16 Abr']);
+  await sleep(1800);
+
+  // 4. user picks date
+  activateKey('📅 Mar 15 Abr');
+  await sleep(400);
+  hideKeyboard();
+  addMsg('user', '📅 Mar 15 Abr');
+  await sleep(800);
+
+  // 5. bot types
+  showTyping();
+  await sleep(1200);
+  hideTyping();
+
+  // 6. bot asks repair type
+  addMsg('bot', '¿Qué tipo de reparación necesitas?');
+  await sleep(400);
+  showKeyboard(['🔧 Rápida ~45min', '🔩 Standard ~90min', '⚙️ Compleja ~4h']);
+  await sleep(1800);
+
+  // 7. user picks standard
+  activateKey('🔩 Standard ~90min');
+  await sleep(400);
+  hideKeyboard();
+  addMsg('user', '🔩 Standard ~90min');
+  await sleep(800);
+
+  // 8. bot types
+  showTyping();
+  await sleep(1200);
+  hideTyping();
+
+  // 9. bot asks name
+  addMsg('bot', '¿Tu nombre completo?');
+  await sleep(2000);
+
+  // 10. user types name
+  addMsg('user', 'Carlos Ruiz');
+  await sleep(800);
+
+  // 11. bot types
+  showTyping();
+  await sleep(1100);
+  hideTyping();
+
+  // 12. bot asks phone
+  addMsg('bot', '¿Tu número de teléfono?');
+  await sleep(2000);
+
+  // 13. user types phone
+  addMsg('user', '612 345 678');
+  await sleep(800);
+
+  // 14. bot types (longer, building summary)
+  showTyping();
+  await sleep(1600);
+  hideTyping();
+
+  // 15. bot shows summary + confirm keyboard
+  addMsg('bot', '📋 <strong>Resumen de tu cita:</strong>\n\n📅 Martes 15 de abril\n🔩 Standard (~90 min)\n👤 Carlos Ruiz\n📞 612 345 678\n\n¿Confirmamos?');
+  await sleep(400);
+  showKeyboard(['✅ Confirmar', '❌ Cancelar']);
+  await sleep(2200);
+
+  // 16. user confirms
+  activateKey('✅ Confirmar');
+  await sleep(400);
+  hideKeyboard();
+  addMsg('user', '✅ Confirmar');
+  await sleep(800);
+
+  // 17. bot types
+  showTyping();
+  await sleep(1500);
+  hideTyping();
+
+  // 18. bot confirms
+  addMsg('bot', '🎉 <strong>¡Reserva confirmada!</strong>\n\nCita #0042 · Martes 15 de abril\nTe esperamos. ¡Hasta entonces! 👋');
+  await sleep(600);
+
+  // 19. dashboard updates
+  addGanttBlock();
+  addTableRow();
+  flashKpi('kpi-total', 6);
+  flashKpi('kpi-conf', 5);
+  flashKpi('kpi-libre', 0);
+  showNotif();
+
+  // 20. pause then loop
+  await sleep(5000);
+  runAnimation();
+}
+
+// start on load
+window.addEventListener('load', () => {
+  setTimeout(runAnimation, 800);
+});
+</script>
+</body>
+</html>
